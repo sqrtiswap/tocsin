@@ -70,19 +70,3 @@ Run::
   tests/test_bitrot.py ............                      [100%]
 
   ==================== 12 passed in 15.05s ====================
-
-Authors
--------
-
-Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_. Multiple
-improvements by
-`Ben Shepherd <mailto:bjashepherd@gmail.com>`_,
-`Jean-Louis Fuchs <mailto:ganwell@fangorn.ch>`_,
-`Marcus Linderoth <marcus@thingsquare.com>`_,
-`p1r473 <mailto:subwayjared@gmail.com>`_,
-`Peter Hofmann <mailto:scm@uninformativ.de>`_,
-`Phil Lundrigan <mailto:philipbl@cs.utah.edu>`_,
-`Reid Williams <rwilliams@ideo.com>`_,
-`Stan Senotrusov <senotrusov@gmail.com>`_,
-`Yang Zhang <mailto:yaaang@gmail.com>`_, and
-`Zhuoyun Wei <wzyboy@wzyboy.org>`_.
