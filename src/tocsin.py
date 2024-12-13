@@ -49,7 +49,7 @@ FSENCODING = sys.getfilesystemencoding()
 try:
     VERSION = version("tocsin")
 except PackageNotFoundError:
-    VERSION = "1.0.1"
+    VERSION = "beta"
 
 
 def normalize_path(path):
