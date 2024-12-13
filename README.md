@@ -3,6 +3,16 @@
 Detects bit rotten files on the hard drive to save your precious photo and music
 collection from slow decay.
 
+## (Un-)Installation
+Install with
+```shell
+make install
+```
+Uninstall with
+```shell
+make uninstall
+```
+
 ## Usage
 
 Go to the desired directory and simply invoke:
