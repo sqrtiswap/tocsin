@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm[toml]"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bitrot"
+name = "tocsin"
 authors = [
     {name = "Łukasz Langa", email = "lukasz@langa.pl"},
 ]
@@ -28,7 +28,7 @@ dynamic = ["version"]
 test = ["pytest", "pytest-order"]
 
 [project.scripts]
-bitrot = "bitrot:run_from_command_line"
+tocsin = "tocsin:run_from_command_line"
 
 [tool.setuptools_scm]
 tag_regex = "^(?P<version>v\\d+(?:\\.\\d+){0,2}[^\\+]*)(?:\\+.*)?$"

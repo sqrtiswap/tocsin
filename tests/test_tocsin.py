@@ -24,8 +24,8 @@ StdOut = list[str]
 StdErr = list[str]
 
 
-def bitrot(*args: str) -> tuple[ReturnCode, StdOut, StdErr]:
-    cmd = [sys.executable, "-m", "bitrot"]
+def tocsin(*args: str) -> tuple[ReturnCode, StdOut, StdErr]:
+    cmd = [sys.executable, "-m", "tocsin"]
     cmd.extend(args)
     res = subprocess.run(shlex.join(cmd), shell=True, capture_output=True)
     stdout = (res.stdout or b"").decode("utf8")
@@ -35,7 +35,7 @@ def bitrot(*args: str) -> tuple[ReturnCode, StdOut, StdErr]:
 
 def bash(script, empty_dir: bool = False) -> bool:
     username = getpass.getuser()
-    test_dir = TMP / f"bitrot-dir-{username}"
+    test_dir = TMP / f"tocsin-dir-{username}"
     if empty_dir and test_dir.is_dir():
         os.chdir(TMP)
         shutil.rmtree(test_dir)
@@ -55,7 +55,7 @@ def bash(script, empty_dir: bool = False) -> bool:
         sleep 1
         """
 
-    script_path = TMP / "bitrot-test.bash"
+    script_path = TMP / "tocsin-test.bash"
     script_path.write_text(dedent(preamble + script))
     script_path.chmod(0o755)
 
@@ -81,7 +81,7 @@ def lines(s: str) -> list[str]:
 
 @pytest.mark.order(1)
 def test_command_exists() -> None:
-    rc, out, err = bitrot("--help")
+    rc, out, err = tocsin("--help")
     assert rc == 0
     assert not err
     assert out[0].startswith("usage:")
@@ -98,14 +98,14 @@ def test_new_files_in_a_tree_dir() -> None:
         echo $RANDOM >> nonemptydirs/dir2/new-file-b.txt
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
     # assert out[0] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[1] == "2 entries in the database. 2 entries new:"
     assert out[2] == "  ./nonemptydirs/dir2/new-file-a.txt"
     assert out[3] == "  ./nonemptydirs/dir2/new-file-b.txt"
-    assert out[4] == "Updating bitrot.sha512... done."
+    assert out[4] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(3)
@@ -115,14 +115,14 @@ def test_modified_files_in_a_tree_dir() -> None:
         echo $RANDOM >> nonemptydirs/dir2/new-file-a.txt
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "2 entries in the database. 1 entries updated:"
     assert out[3] == "  ./nonemptydirs/dir2/new-file-a.txt"
-    assert out[4] == "Updating bitrot.sha512... done."
+    assert out[4] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(4)
@@ -132,15 +132,15 @@ def test_renamed_files_in_a_tree_dir() -> None:
         mv nonemptydirs/dir2/new-file-a.txt nonemptydirs/dir2/new-file-a.txt2
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "2 entries in the database. 1 entries renamed:"
     o3 = " from ./nonemptydirs/dir2/new-file-a.txt to ./nonemptydirs/dir2/new-file-a.txt2"
     assert out[3] == o3
-    assert out[4] == "Updating bitrot.sha512... done."
+    assert out[4] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(5)
@@ -150,14 +150,14 @@ def test_deleted_files_in_a_tree_dir() -> None:
         rm  nonemptydirs/dir2/new-file-a.txt2
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "1 entries in the database. 1 entries missing:"
     assert out[3] == "  ./nonemptydirs/dir2/new-file-a.txt2"
-    assert out[4] == "Updating bitrot.sha512... done."
+    assert out[4] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(5)
@@ -170,10 +170,10 @@ def test_new_files_and_modified_files_in_a_tree_dir() -> None:
         echo $RANDOM >> nonemptydirs/dir2/new-file-b.txt
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "8 entries in the database. 7 entries new:"
     assert out[3] == "  ./more-files-a.txt"
@@ -185,7 +185,7 @@ def test_new_files_and_modified_files_in_a_tree_dir() -> None:
     assert out[9] == "  ./more-files-g.txt"
     assert out[10] == "1 entries updated:"
     assert out[11] == "  ./nonemptydirs/dir2/new-file-b.txt"
-    assert out[12] == "Updating bitrot.sha512... done."
+    assert out[12] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(6)
@@ -200,10 +200,10 @@ def test_new_files_modified_deleted_and_moved_in_a_tree_dir() -> None:
         rm more-files-g.txt
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "14 entries in the database. 7 entries new:"
     assert out[3] == "  ./nonemptydirs/pl-more-files-a.txt"
@@ -219,7 +219,7 @@ def test_new_files_modified_deleted_and_moved_in_a_tree_dir() -> None:
     assert out[13] == " from ./more-files-a.txt to ./more-files-a.txt2"
     assert out[14] == "1 entries missing:"
     assert out[15] == "  ./more-files-g.txt"
-    assert out[16] == "Updating bitrot.sha512... done."
+    assert out[16] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(7)
@@ -236,10 +236,10 @@ def test_new_files_modified_deleted_and_moved_in_a_tree_dir_2() -> None:
         rm more-files-f.txt nonemptydirs/pl-more-files-c.txt
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "21 entries in the database. 9 entries new:"
     assert out[3] == "  ./nonemptydirs/pl2-more-files-a.txt"
@@ -259,7 +259,7 @@ def test_new_files_modified_deleted_and_moved_in_a_tree_dir_2() -> None:
     assert out[16] == "2 entries missing:"
     assert out[17] == "  ./more-files-f.txt"
     assert out[18] == "  ./nonemptydirs/pl-more-files-c.txt"
-    assert out[19] == "Updating bitrot.sha512... done."
+    assert out[19] == "Updating tocsin.sha512... done."
 
 
 @pytest.mark.order(8)
@@ -273,10 +273,10 @@ def test_3278_files() -> None:
         split -b 100 -a 10 masterfile
         """
     )
-    rc, out, err = bitrot()
+    rc, out, err = tocsin()
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     o2 = "3299 entries in the database, 3278 new, 0 updated, 0 renamed, 0 missing."
     assert out[2] == o2
@@ -289,10 +289,10 @@ def test_3278_files_2() -> None:
         mv alotfiles/here alotfiles/here-moved
         """
     )
-    rc, out, err = bitrot()
+    rc, out, err = tocsin()
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     o2 = "3299 entries in the database, 0 new, 0 updated, 3278 renamed, 0 missing."
     assert out[2] == o2
@@ -308,10 +308,10 @@ def test_rotten_file() -> None:
         touch -r non-rotten-file rotten-file
         """
     )
-    rc, out, err = bitrot("-v")
+    rc, out, err = tocsin("-v")
     assert rc == 0
     assert not err
-    assert out[0] == "Checking bitrot.db integrity... ok."
+    assert out[0] == "Checking tocsin.db integrity... ok."
     # assert out[1] == "Finished. 0.00 MiB of data read. 0 errors found."
     assert out[2] == "3301 entries in the database. 2 entries new:"
     assert out[3] == "  ./non-rotten-file"
@@ -328,7 +328,7 @@ def test_rotten_file_2() -> None:
         touch -r non-rotten-file rotten-file
         """
     )
-    rc, out, err = bitrot("-q")
+    rc, out, err = tocsin("-q")
     assert rc == 1
     assert not out
     e = (
@@ -342,7 +342,7 @@ def test_rotten_file_2() -> None:
 @pytest.mark.order("last")
 def test_cleanup() -> None:
     username = getpass.getuser()
-    test_dir = TMP / f"bitrot-dir-{username}"
+    test_dir = TMP / f"tocsin-dir-{username}"
     if test_dir.is_dir():
         os.chdir(TMP)
         shutil.rmtree(test_dir)

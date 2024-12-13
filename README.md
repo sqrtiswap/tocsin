@@ -1,4 +1,4 @@
-# bitrot
+# tocsin
 
 Detects bit rotten files on the hard drive to save your precious photo and music
 collection from slow decay.
@@ -7,18 +7,18 @@ collection from slow decay.
 
 Go to the desired directory and simply invoke:
 ```shell
-$ bitrot
+$ tocsin
 ```
 This will start digging through your directory structure recursively indexing
-all files found. The index is stored in a `.bitrot.db` file which is a SQLite
+all files found. The index is stored in a `.tocsin.db` file which is a SQLite
 3 database.
 
-Next time you run `bitrot` it will add new files and update the index for files
+Next time you run `tocsin` it will add new files and update the index for files
 with a changed modification date. Most importantly however, it will report all
 errors, e.g. files that changed on the hard drive but still have the same
 modification date.
 
-All paths stored in `.bitrot.db` are relative so it's safe to rescan a folder
+All paths stored in `.tocsin.db` are relative so it's safe to rescan a folder
 after moving it to another drive. Just remember to move it in a way that doesn't
 touch modification dates. Otherwise the checksum database is useless.
 
@@ -45,12 +45,12 @@ There's a simple but comprehensive test scenario using
    (.venv)$ pytest -x
    ==================== test session starts ====================
    platform darwin -- Python 3.10.14, pytest-8.3.4, pluggy-1.5.0
-   rootdir: /Users/alexander/sources/bitrot
+   rootdir: /Users/alexander/sources/tocsin
    configfile: pyproject.toml
    plugins: order-1.3.0
    collected 13 items
 
-   tests/test_bitrot.py .............                     [100%]
+   tests/test_tocsin.py .............                     [100%]
 
    ==================== 13 passed in 16.22s ====================
    ```
