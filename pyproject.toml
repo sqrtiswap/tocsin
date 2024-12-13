@@ -6,9 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "tocsin"
 authors = [
     {name = "Łukasz Langa", email = "lukasz@langa.pl"},
+    {name = "Alexander Möller", email = "alexander.moeller@detmold.com"}
 ]
 description = "Detects bit rotten files on the hard drive to save your precious photo and music collection from slow decay."
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["file", "checksum", "database"]
 license = {text = "MIT"}
