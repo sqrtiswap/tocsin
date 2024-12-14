@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Copyright (C) 2013 by Łukasz Langa
+# Copyright (C) 2024 by Alexander Möller
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -46,9 +47,9 @@ DOT_THRESHOLD = 200
 IGNORED_FILE_SYSTEM_ERRORS = {errno.ENOENT, errno.EACCES}
 FSENCODING = sys.getfilesystemencoding()
 try:
-    VERSION = version("bitrot")
+    VERSION = version("tocsin")
 except PackageNotFoundError:
-    VERSION = "1.0.1"
+    VERSION = "beta"
 
 
 def normalize_path(path):
@@ -77,9 +78,9 @@ def get_sqlite3_cursor(path, copy=False):
     path = path.decode(FSENCODING)
     if copy:
         if not os.path.exists(path):
-            raise ValueError("error: bitrot database at {} does not exist."
+            raise ValueError("error: tocsin database at {} does not exist."
                              "".format(path))
-        db_copy = tempfile.NamedTemporaryFile(prefix='bitrot_', suffix='.db',
+        db_copy = tempfile.NamedTemporaryFile(prefix='tocsin_', suffix='.db',
                                               delete=False)
         with open(path, 'rb') as db_orig:
             try:
@@ -92,11 +93,11 @@ def get_sqlite3_cursor(path, copy=False):
     atexit.register(conn.close)
     cur = conn.cursor()
     tables = set(t for t, in cur.execute('SELECT name FROM sqlite_master'))
-    if 'bitrot' not in tables:
-        cur.execute('CREATE TABLE bitrot (path TEXT PRIMARY KEY, '
+    if 'tocsin' not in tables:
+        cur.execute('CREATE TABLE tocsin (path TEXT PRIMARY KEY, '
                     'mtime INTEGER, hash TEXT, timestamp TEXT)')
-    if 'bitrot_hash_idx' not in tables:
-        cur.execute('CREATE INDEX bitrot_hash_idx ON bitrot (hash)')
+    if 'tocsin_hash_idx' not in tables:
+        cur.execute('CREATE INDEX tocsin_hash_idx ON tocsin (hash)')
     atexit.register(conn.commit)
     return conn
 
@@ -159,9 +160,9 @@ def compute_one(path, chunk_size):
                 ),
                 file=sys.stderr,
             )
-            raise BitrotException
+            raise TocsinException
 
-        raise   # Not expected? https://github.com/ambv/bitrot/issues/
+        raise   # Not expected? https://lists.sr.ht/~xan/tocsin
 
     try:
         new_sha1 = sha1(path, chunk_size)
@@ -172,16 +173,16 @@ def compute_one(path, chunk_size):
             ),
             file=sys.stderr,
         )
-        raise BitrotException
+        raise TocsinException
 
     return p_uni, st.st_size, int(st.st_mtime), new_sha1
 
 
-class BitrotException(Exception):
+class TocsinException(Exception):
     pass
 
 
-class Bitrot(object):
+class Tocsin(object):
     def __init__(
         self, verbosity=1, test=False, follow_links=False, commit_interval=300,
         chunk_size=DEFAULT_CHUNK_SIZE, workers=os.cpu_count(),
@@ -206,12 +207,12 @@ class Bitrot(object):
     def run(self):
         check_sha512_integrity(verbosity=self.verbosity)
 
-        bitrot_db = get_path()
-        bitrot_sha512 = get_path(ext=b'sha512')
+        tocsin_db = get_path()
+        tocsin_sha512 = get_path(ext=b'sha512')
         try:
-            conn = get_sqlite3_cursor(bitrot_db, copy=self.test)
+            conn = get_sqlite3_cursor(tocsin_db, copy=self.test)
         except ValueError:
-            raise BitrotException(
+            raise TocsinException(
                 2,
                 'No database exists so cannot test. Run the tool once first.',
             )
@@ -225,7 +226,7 @@ class Bitrot(object):
         missing_paths = self.select_all_paths(cur)
         hashes = self.select_all_hashes(cur)
         paths, total_size = list_existing_paths(
-            b'.', expected=missing_paths, ignored={bitrot_db, bitrot_sha512},
+            b'.', expected=missing_paths, ignored={tocsin_db, tocsin_sha512},
             follow_links=self.follow_links,
         )
         paths_uni = set(normalize_path(p) for p in paths)
@@ -234,7 +235,7 @@ class Bitrot(object):
         for future in as_completed(futures):
             try:
                 p_uni, new_size, new_mtime, new_sha1 = future.result()
-            except BitrotException:
+            except TocsinException:
                 continue
 
             current_size += new_size
@@ -258,7 +259,7 @@ class Bitrot(object):
 
             # At this point we know we're seeing an expected file.
             missing_paths.discard(p_uni)
-            cur.execute('SELECT mtime, hash, timestamp FROM bitrot WHERE path=?',
+            cur.execute('SELECT mtime, hash, timestamp FROM tocsin WHERE path=?',
                         (p_uni,))
             row = cur.fetchone()
             if not row:
@@ -272,7 +273,7 @@ class Bitrot(object):
             stored_mtime, stored_sha1, stored_ts = row
             if int(stored_mtime) != new_mtime:
                 updated_paths.append(p_uni)
-                cur.execute('UPDATE bitrot SET mtime=?, hash=?, timestamp=? '
+                cur.execute('UPDATE tocsin SET mtime=?, hash=?, timestamp=? '
                             'WHERE path=?',
                             (new_mtime, new_sha1, ts(), p_uni))
                 self.maybe_commit(conn)
@@ -289,7 +290,7 @@ class Bitrot(object):
                 )
 
         for path in missing_paths:
-            cur.execute('DELETE FROM bitrot WHERE path=?', (path,))
+            cur.execute('DELETE FROM tocsin WHERE path=?', (path,))
 
         conn.commit()
 
@@ -297,7 +298,7 @@ class Bitrot(object):
             cur.execute('vacuum')
 
         if self.verbosity:
-            cur.execute('SELECT COUNT(path) FROM bitrot')
+            cur.execute('SELECT COUNT(path) FROM tocsin')
             all_count = cur.fetchone()[0]
             self.report_done(
                 total_size,
@@ -312,17 +313,17 @@ class Bitrot(object):
         update_sha512_integrity(verbosity=self.verbosity)
 
         if errors:
-            raise BitrotException(
+            raise TocsinException(
                 1, 'There were {} errors found.'.format(len(errors)), errors,
             )
 
     def select_all_paths(self, cur):
-        """Return a set of all distinct paths in the bitrot database.
+        """Return a set of all distinct paths in the tocsin database.
 
         The paths are Unicode and are normalized if FSENCODING was UTF-8.
         """
         result = set()
-        cur.execute('SELECT path FROM bitrot')
+        cur.execute('SELECT path FROM tocsin')
         row = cur.fetchone()
         while row:
             result.add(row[0])
@@ -335,7 +336,7 @@ class Bitrot(object):
         The paths are Unicode and are normalized if FSENCODING was UTF-8.
         """
         result = {}
-        cur.execute('SELECT hash, path FROM bitrot')
+        cur.execute('SELECT hash, path FROM tocsin')
         row = cur.fetchone()
         while row:
             rhash, rpath = row
@@ -403,7 +404,7 @@ class Bitrot(object):
         on rename.
 
         `cur` is the database cursor. `new_path` is the new Unicode path.
-        `paths_uni` are Unicode paths seen on disk during this run of Bitrot.
+        `paths_uni` are Unicode paths seen on disk during this run of Tocsin.
         `hashes` is a dictionary selected from the database, keys are hashes, values
         are sets of Unicode paths that are stored in the DB under the given hash.
 
@@ -416,7 +417,7 @@ class Bitrot(object):
                 # File of the same hash used to exist but no longer does.
                 # Let's treat `new_path` as a renamed version of that `old_path`.
                 cur.execute(
-                    'UPDATE bitrot SET mtime=?, path=?, timestamp=? WHERE path=?',
+                    'UPDATE tocsin SET mtime=?, path=?, timestamp=? WHERE path=?',
                     (new_mtime, new_path, ts(), old_path),
                 )
                 return old_path
@@ -426,27 +427,27 @@ class Bitrot(object):
             # currently stored paths for this hash still point to existing files.
             # Let's insert a new entry for what appears to be a new file.
             cur.execute(
-                'INSERT INTO bitrot VALUES (?, ?, ?, ?)',
+                'INSERT INTO tocsin VALUES (?, ?, ?, ?)',
                 (new_path, new_mtime, new_sha1, ts()),
             )
             return new_path
 
 def get_path(directory=b'.', ext=b'db'):
-    """Compose the path to the selected bitrot file."""
-    return os.path.join(directory, b'.bitrot.' + ext)
+    """Compose the path to the selected tocsin file."""
+    return os.path.join(directory, b'.tocsin.' + ext)
 
 
-def stable_sum(bitrot_db=None):
+def stable_sum(tocsin_db=None):
     """Calculates a stable SHA512 of all entries in the database.
 
     Useful for comparing if two directories hold the same data, as it ignores
     timing information."""
-    if bitrot_db is None:
-        bitrot_db = get_path()
+    if tocsin_db is None:
+        tocsin_db = get_path()
     digest = hashlib.sha512()
-    conn = get_sqlite3_cursor(bitrot_db)
+    conn = get_sqlite3_cursor(tocsin_db)
     cur = conn.cursor()
-    cur.execute('SELECT hash FROM bitrot ORDER BY path')
+    cur.execute('SELECT hash FROM tocsin ORDER BY path')
     row = cur.fetchone()
     while row:
         digest.update(row[0].encode('ascii'))
@@ -460,34 +461,34 @@ def check_sha512_integrity(verbosity=1):
         return
 
     if verbosity:
-        print('Checking bitrot.db integrity... ', end='')
+        print('Checking tocsin.db integrity... ', end='')
         sys.stdout.flush()
     with open(sha512_path, 'rb') as f:
         old_sha512 = f.read().strip()
-    bitrot_db = get_path()
+    tocsin_db = get_path()
     digest = hashlib.sha512()
-    with open(bitrot_db, 'rb') as f:
+    with open(tocsin_db, 'rb') as f:
         digest.update(f.read())
     new_sha512 = digest.hexdigest().encode('ascii')
     if new_sha512 != old_sha512:
         if verbosity:
             if len(old_sha512) == 128:
                 print(
-                    "error: SHA512 of the file is different, bitrot.db might "
+                    "error: SHA512 of the file is different, tocsin.db might "
                     "be corrupt.",
                 )
             else:
                 print(
-                    "error: SHA512 of the file is different but bitrot.sha512 "
+                    "error: SHA512 of the file is different but tocsin.sha512 "
                     "has a suspicious length. It might be corrupt.",
                 )
             print(
-                "If you'd like to continue anyway, delete the .bitrot.sha512 "
+                "If you'd like to continue anyway, delete the .tocsin.sha512 "
                 "file and try again.",
                 file=sys.stderr,
             )
-        raise BitrotException(
-            3, 'bitrot.db integrity check failed, cannot continue.',
+        raise TocsinException(
+            3, 'tocsin.db integrity check failed, cannot continue.',
         )
 
     if verbosity:
@@ -499,14 +500,14 @@ def update_sha512_integrity(verbosity=1):
     if os.path.exists(sha512_path):
         with open(sha512_path, 'rb') as f:
             old_sha512 = f.read().strip()
-    bitrot_db = get_path()
+    tocsin_db = get_path()
     digest = hashlib.sha512()
-    with open(bitrot_db, 'rb') as f:
+    with open(tocsin_db, 'rb') as f:
         digest.update(f.read())
     new_sha512 = digest.hexdigest().encode('ascii')
     if new_sha512 != old_sha512:
         if verbosity:
-            print('Updating bitrot.sha512... ', end='')
+            print('Updating tocsin.sha512... ', end='')
             sys.stdout.flush()
         with open(sha512_path, 'wb') as f:
             f.write(new_sha512)
@@ -518,13 +519,13 @@ def run_from_command_line():
 
     freeze_support()
 
-    parser = argparse.ArgumentParser(prog='bitrot')
+    parser = argparse.ArgumentParser(prog='tocsin')
     parser.add_argument(
         '-l', '--follow-links', action='store_true',
         help='follow symbolic links and store target files\' hashes. Once '
              'a path is present in the database, it will be checked against '
              'changes in content even if it becomes a symbolic link. In '
-             'other words, if you run `bitrot -l`, on subsequent runs '
+             'other words, if you run `tocsin -l`, on subsequent runs '
              'symbolic links registered during the first run will be '
              'properly followed and checked even if you run without `-l`.')
     parser.add_argument(
@@ -570,7 +571,7 @@ def run_from_command_line():
             verbosity = 0
         elif args.verbose:
             verbosity = 2
-        bt = Bitrot(
+        bt = Tocsin(
             verbosity=verbosity,
             test=args.test,
             follow_links=args.follow_links,
@@ -582,7 +583,7 @@ def run_from_command_line():
             FSENCODING = args.fsencoding
         try:
             bt.run()
-        except BitrotException as bre:
+        except TocsinException as bre:
             print('error:', bre.args[1], file=sys.stderr)
             sys.exit(bre.args[0])
 

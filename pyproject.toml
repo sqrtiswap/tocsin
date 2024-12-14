@@ -3,12 +3,13 @@ requires = ["setuptools", "setuptools-scm[toml]"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bitrot"
+name = "tocsin"
 authors = [
     {name = "Łukasz Langa", email = "lukasz@langa.pl"},
+    {name = "Alexander Möller", email = "alexander.moeller@detmold.com"}
 ]
 description = "Detects bit rotten files on the hard drive to save your precious photo and music collection from slow decay."
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.8"
 keywords = ["file", "checksum", "database"]
 license = {text = "MIT"}
@@ -28,7 +29,7 @@ dynamic = ["version"]
 test = ["pytest", "pytest-order"]
 
 [project.scripts]
-bitrot = "bitrot:run_from_command_line"
+tocsin = "tocsin:run_from_command_line"
 
 [tool.setuptools_scm]
 tag_regex = "^(?P<version>v\\d+(?:\\.\\d+){0,2}[^\\+]*)(?:\\+.*)?$"
