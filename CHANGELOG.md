@@ -1,3 +1,9 @@
+# 1.0.0
+- First `tocsin(1)` version
+- General clean up, especially of Readme, incl. separation into multiple files
+- Add Makefile
+- Add manpage
+
 # bitrot-1.0.1 (2023-08-02)
 - officially remove Python 2 support that was broken since 1.0.0 anyway; now the
   package works with Python 3.8+ because of a few features
