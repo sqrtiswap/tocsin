@@ -2,39 +2,14 @@
 
 Script to detect bit rot, fork of [ambv/bitrot](https://github.com/ambv/bitrot)
 
-## (Un-)Installation
-Install with
+## Usage & documentation
 ```shell
-make install
-```
-Uninstall with
-```shell
-make uninstall
+make help
 ```
 
-## Usage
-
-Enter the desired directory and invoke:
-```shell
-$ tocsin
-```
-This will start digging through the directory structure recursively indexing
-all files found. The index is stored in a `.tocsin.db` file which is an SQLite
-3 database.
-
-Next time `tocsin` is run it will add new files and update the index for files
-with a changed modification date. Most importantly however, it will report all
-errors, e.g. files that changed on the drive but still have the same
-modification date.
-
-All paths stored in `.tocsin.db` are relative, so it's safe to rescan a folder
-after moving it to another drive. Just remember to move it in a way that doesn't
-touch modification dates. Otherwise the checksum database is useless.
+For everything else RTFM.
 
 ## Tests
-
-[pytest](https://pypi.org/p/pytest) &
-[pytest-order](https://pypi.org/p/pytest-order).
 
 1. Create venv:
    ```shell
